@@ -1,10 +1,9 @@
 import aiohttp
 import asyncio
-import orjson as json
+import json
 import datetime
-start = datetime.datetime.now()
 
-#优化了读写以及加入计时器
+start = datetime.datetime.now()
 
 # Key及初始用户
 key=input()
@@ -13,21 +12,20 @@ origin=input()
 steamid.append(origin)
 i=0
 
-# 接收请求
 async def fetch(session, url):
     async with session.get(url) as response:
         return await response.text()
 
-#执行操作
-async def main(steamid, i):
+async def main():
     async with aiohttp.ClientSession() as session:
-        while i < len(steamid) and i < 50:  # 限制一次跑的数量
+        global i
+        global steamid
+        while i < len(steamid) and i < 10:  # 限制一次跑的数量
             try:
                 # 拼贴社交关系
                 url='http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='+key+'&steamid='+steamid[i]+'&relationship=friend'
                 # 拼贴游戏库
                 url2='http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='+key+'&steamid='+steamid[i]+'&format=json'
-                # 等待异步结果
                 r = await fetch(session, url)
                 rr = await fetch(session, url2)
                 p= json.loads(r)
@@ -37,27 +35,28 @@ async def main(steamid, i):
                 steamid.extend(friends)  # 将新的朋友添加到 steamid 列表中
                 steamid=list(set(steamid))
                 # 社交关系储存
-                filename=steamid[i]
-                with open(r'A'+filename+'.json','w')as f:
-                    f.write(r)
+                with open('friends_data.json', 'a') as f:
+                    f.write(json.dumps({steamid[i]: p}) + '\n,')
                 # 游戏库储存
-                with open(r'B'+filename+'.json','w')as f:
-                    f.write(rr)
+                with open('games_data.json', 'a') as f:
+                    f.write(json.dumps({steamid[i]: pp}) + '\n,')
                 # 移动到下一个 steamid
                 i += 1  
             # 异常记录
             except Exception as e:
-                print(f"Error processing steamid {steamid[i]}: {e}")
                 with open('unprocessed_steamids.txt', 'a') as f:
                     f.write(str(e)+':'+steamid[i] + '\n')
                 i+=1
 
-# 构造循环
 loop = asyncio.get_event_loop()
-loop.run_until_complete(main([origin], 0))
-# 将 steamid 列表写入到一个文件中
-with open('steamids.txt', 'w') as f:
+loop.run_until_complete(main())
+'''
+with open('steamidsALL.txt', 'w') as f:
     for id in steamid:
         f.write(id + '\n')
+'''
+with open('steamidsNOT.txt', 'w') as f:
+    for d in steamid[i:]:
+        f.write(d + '\n')
 end = datetime.datetime.now()
 print(end-start)
