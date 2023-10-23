@@ -6,3 +6,5 @@
 ## Output
 * A+SteamID:friends
 * B+SteamID:games
+## Tips
+* annotation made by chinese
