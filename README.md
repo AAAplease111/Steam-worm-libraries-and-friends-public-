@@ -8,3 +8,5 @@
 * B+SteamID:games
 ## Tips
 * annotation made by chinese
+# update
+Using asynchronous response, reducing times
