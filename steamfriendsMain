@@ -1,0 +1,53 @@
+import requests
+import json
+import time
+import http.client
+import numpy as np
+
+# 网络构造
+http.client.HTTPConnection._http_vsn = 10
+http.client.HTTPConnection._http_vsn_str = 'HTTP/1.1'
+
+# Key及初始用户
+key=input("Steam Key:")
+steamid=[]
+origin=input("Origin User ID:")
+steamid.append(origin)
+i=0
+while i < len(steamid) and i < 2:  # 限制一次跑的数量
+    try:
+        # 拼贴社交关系
+        url='http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='+key+'&steamid='+steamid[i]+'&relationship=friend'
+        # 拼贴游戏库
+        url2='http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='+key+'&steamid='+steamid[i]+'&format=json'
+        # print(url2)
+        r=requests.get(url)
+        rr=requests.get(url2)
+        p= r.json()
+        pp=rr.json()
+        # 构造下一循环并去重
+        friends = [friend['steamid'] for friend in p['friendslist']['friends']]
+        steamid.extend(friends)  # 将新的朋友添加到 steamid 列表中
+        steamid=list(set(steamid))
+        # 社交关系储存
+        p = json.dumps(p)
+        filename=steamid[i]
+        with open(r'A'+filename+'.json','w')as f:
+            f.write(p)
+        # 游戏库储存
+        pp = json.dumps(pp)
+        with open(r'B'+filename+'.json','w')as f:
+            f.write(pp)
+        # 移动到下一个 steamid
+        i += 1  
+    # 异常记录
+    except Exception as e:
+        print(f"Error processing steamid {steamid[i]}: {e}")
+        with open('unprocessed_steamids.txt', 'a') as f:
+            f.write(str(e)+':'+steamid[i] + '\n')
+        i+=1
+
+# 将 steamid 列表写入到一个文件中
+with open('steamids.txt', 'w') as f:
+    for id in steamid:
+        f.write(id + '\n')
