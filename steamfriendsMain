@@ -1,34 +1,33 @@
-import requests
-import json
-import http.client
 import aiohttp
 import asyncio
+import orjson as json
+import datetime
+start = datetime.datetime.now()
 
-# 网络构造
-http.client.HTTPConnection._http_vsn = 10
-http.client.HTTPConnection._http_vsn_str = 'HTTP/1.1'
+#优化了读写以及加入计时器
 
 # Key及初始用户
-key=input("Steam Key:")
+key=input()
 steamid=[]
-origin=input("Origin User ID:")
+origin=input()
 steamid.append(origin)
 i=0
 
+# 接收请求
 async def fetch(session, url):
     async with session.get(url) as response:
         return await response.text()
 
-async def main():
+#执行操作
+async def main(steamid, i):
     async with aiohttp.ClientSession() as session:
-        global i
-        global steamid
         while i < len(steamid) and i < 50:  # 限制一次跑的数量
             try:
                 # 拼贴社交关系
                 url='http://api.steampowered.com/ISteamUser/GetFriendList/v0001/?key='+key+'&steamid='+steamid[i]+'&relationship=friend'
                 # 拼贴游戏库
                 url2='http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key='+key+'&steamid='+steamid[i]+'&format=json'
+                # 等待异步结果
                 r = await fetch(session, url)
                 rr = await fetch(session, url2)
                 p= json.loads(r)
@@ -38,14 +37,12 @@ async def main():
                 steamid.extend(friends)  # 将新的朋友添加到 steamid 列表中
                 steamid=list(set(steamid))
                 # 社交关系储存
-                p = json.dumps(p)
                 filename=steamid[i]
                 with open(r'A'+filename+'.json','w')as f:
-                    f.write(p)
+                    f.write(r)
                 # 游戏库储存
-                pp = json.dumps(pp)
                 with open(r'B'+filename+'.json','w')as f:
-                    f.write(pp)
+                    f.write(rr)
                 # 移动到下一个 steamid
                 i += 1  
             # 异常记录
@@ -55,10 +52,12 @@ async def main():
                     f.write(str(e)+':'+steamid[i] + '\n')
                 i+=1
 
+# 构造循环
 loop = asyncio.get_event_loop()
-loop.run_until_complete(main())
+loop.run_until_complete(main([origin], 0))
 # 将 steamid 列表写入到一个文件中
 with open('steamids.txt', 'w') as f:
     for id in steamid:
         f.write(id + '\n')
-
+end = datetime.datetime.now()
+print(end-start)
